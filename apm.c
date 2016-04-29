@@ -513,10 +513,8 @@ void apm_error_cb(int type, const char *error_filename, const uint error_lineno,
 
 void apm_throw_exception_hook(zval *exception TSRMLS_DC)
 {
-	zval *message, *file, *line;
 #if PHP_VERSION_ID >= 70000
 	zval message, file, line;
-	zval rv;
 #else
 	zval *message, *file, *line;
 #endif
@@ -604,14 +602,14 @@ void extract_data(TSRMLS_D)
 	zval *tmp;
 
 	APM_DEBUG("Extracting data\n");
-	
+
 	if (APM_RD(initialized)) {
 		APM_DEBUG("Data already initialized\n");
 		return;
 	}
 
 	APM_RD(initialized) = 1;
-	
+
 	zend_is_auto_global_compat("_SERVER");
 	if (FETCH_HTTP_GLOBALS(SERVER)) {
 		REGISTER_INFO("REQUEST_URI", uri, IS_STRING);
@@ -620,7 +618,7 @@ void extract_data(TSRMLS_D)
 		REGISTER_INFO("REQUEST_TIME", ts, IS_LONG);
 		REGISTER_INFO("SCRIPT_FILENAME", script, IS_STRING);
 		REGISTER_INFO("REQUEST_METHOD", method, IS_STRING);
-		
+
 		if (APM_G(store_ip)) {
 			REGISTER_INFO("REMOTE_ADDR", ip, IS_STRING);
 		}
