@@ -515,10 +515,7 @@ void apm_throw_exception_hook(zval *exception TSRMLS_DC)
 {
 	zval *message, *file, *line;
 #if PHP_VERSION_ID >= 70000
-	zval message, file, line;
 	zval rv;
-#else
-	zval *message, *file, *line;
 #endif
 	zend_class_entry *default_ce;
 
@@ -530,20 +527,16 @@ void apm_throw_exception_hook(zval *exception TSRMLS_DC)
 		default_ce = zend_exception_get_default(TSRMLS_C);
 
 #if PHP_VERSION_ID >= 70000
-		zend_call_method_with_0_params(exception, default_ce, NULL, "getmessage", &message);
-		zend_call_method_with_0_params(exception, default_ce, NULL, "getfile", &file);
-		zend_call_method_with_0_params(exception, default_ce, NULL, "getline", &line);
+		message = zend_read_property(default_ce, exception, "message", sizeof("message")-1, 0, &rv);
+		file = zend_read_property(default_ce, exception, "file", sizeof("file")-1, 0, &rv);
+		line = zend_read_property(default_ce, exception, "line", sizeof("line")-1, 0, &rv);
 #else
 		message = zend_read_property(default_ce, exception, "message", sizeof("message")-1, 0 TSRMLS_CC);
 		file = zend_read_property(default_ce, exception, "file", sizeof("file")-1, 0 TSRMLS_CC);
 		line = zend_read_property(default_ce, exception, "line", sizeof("line")-1, 0 TSRMLS_CC);
 #endif
 
-#if PHP_VERSION_ID >= 70000
-		process_event(APM_EVENT_EXCEPTION, E_EXCEPTION, Z_STRVAL(file), Z_LVAL(line), Z_STRVAL(message) TSRMLS_CC);
-#else
 		process_event(APM_EVENT_EXCEPTION, E_EXCEPTION, Z_STRVAL_P(file), Z_LVAL_P(line), Z_STRVAL_P(message) TSRMLS_CC);
-#endif
 	}
 }
 
@@ -604,14 +597,14 @@ void extract_data(TSRMLS_D)
 	zval *tmp;
 
 	APM_DEBUG("Extracting data\n");
-	
+
 	if (APM_RD(initialized)) {
 		APM_DEBUG("Data already initialized\n");
 		return;
 	}
 
 	APM_RD(initialized) = 1;
-	
+
 	zend_is_auto_global_compat("_SERVER");
 	if (FETCH_HTTP_GLOBALS(SERVER)) {
 		REGISTER_INFO("REQUEST_URI", uri, IS_STRING);
@@ -620,7 +613,7 @@ void extract_data(TSRMLS_D)
 		REGISTER_INFO("REQUEST_TIME", ts, IS_LONG);
 		REGISTER_INFO("SCRIPT_FILENAME", script, IS_STRING);
 		REGISTER_INFO("REQUEST_METHOD", method, IS_STRING);
-		
+
 		if (APM_G(store_ip)) {
 			REGISTER_INFO("REMOTE_ADDR", ip, IS_STRING);
 		}
